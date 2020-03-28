@@ -1,0 +1,45 @@
+{% if router_id is defined %}
+set routing-options router-id {{ router_id }}
+{% endif %}
+{% if bgp_global_asn is defined %}
+set routing-options autonomous-system {{ bgp_global_asn }}
+{% for group in bgp_groups %}
+set protocols bgp group {{ group.name }} type {{ group.type }}
+set protocols bgp group {{ group.name }} family {{ group.family_afi }} {{ group.family_safi }}
+{% if group.export_policy is defined %}
+set protocols bgp group {{ group.name }} export {{ group.export_policy }}
+{% endif %}
+{% if group.import_policy is defined %}
+set protocols bgp group {{ group.name }} import {{ group.import_policy }}
+{% endif %}
+{% if group.local_address is defined %}
+set protocols bgp group {{ group.name }} local-address {{ group.local_address }} 
+{% endif %}
+{% if group.group_asn is defined %}
+set protocols bgp group {{ group.name }} peer-as {{ group.group_asn }}
+{% endif %}
+{% for neighbor in group.neighbors %}
+set protocols bgp group {{ group.name }} neighbor {{ neighbor.ip }}
+{% if neighbor.asn is defined %}
+set protocols bgp group {{ group.name }} neighbor {{ neighbor.ip }} {{ neighbor.asn }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if policies is defined %}
+{% for policy in policies %}
+{% for term in policy.terms %}
+{% if term.froms is defined %}
+{% for from in term.froms %}
+set policy-options policy-statement {{ policy.name }} term {{ term.id }} from {{ from.type }} {{ from.data }}
+{% endfor %}
+{% endif %}
+{% if term.thens is defined %}
+{% for then in term.thens %}
+{% if then.type == 'terminate' %}
+set policy-options policy-statement  {{ policy.name }} term {{ term.id }} then {{ then.terminating_action }} 
+{% else %}
+set policy-options policy-statement  {{ policy.name }} term {{ term.id }} then {{ then.type }} {{ then.type_action }} {{ then.data }}
+{% endif %}
+{% endfor %}
+{% endif %}
